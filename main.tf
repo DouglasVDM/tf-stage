@@ -60,8 +60,6 @@ resource "aws_internet_gateway" "app_internet_gateway" {
   vpc_id = aws_vpc.my_vpc_01.id
 }
 
-
-
 # Route Table
 resource "aws_route_table" "private_route_table" {
   tags = {
@@ -110,25 +108,205 @@ resource "aws_route_table_association" "private_rt_association" {
 
 
 # Security Group
-resource "aws_security_group" "api_security_group" {
-  name        = "api-security-group"
-  description = "api security group"
-  vpc_id      = aws_vpc.my_vpc_01.id
+resource "aws_security_group" "private_sg" {
+  tags = {
+    Name = "Private Security Group"
+  }
+
+  tags_all = {
+    Name = "private_sg"
+  }
+
+  description = "Security Group for Node API and MySql db"
+  egress {
+    cidr_blocks = ["0.0.0.0/0"]
+    from_port   = 0
+    protocol    = "-1"
+    to_port     = 0
+  }
+
+  ingress {
+    cidr_blocks = ["102.65.62.201/32"]
+    description = "Admin Desktop"
+    from_port   = 22
+    protocol    = "tcp"
+    to_port     = 22
+  }
+
+  ingress {
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "open https web port for internet traffic"
+    from_port   = 443
+    protocol    = "tcp"
+    to_port     = 443
+  }
+
+  ingress {
+    cidr_blocks = ["102.134.74.40/32"]
+    description = "Admin Laptop"
+    from_port   = 22
+    protocol    = "tcp"
+    to_port     = 22
+  }
+
+  ingress {
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "first api listening on this port"
+    from_port   = 5001
+    protocol    = "tcp"
+    to_port     = 5001
+  }
+
+  ingress {
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "second api listening on this port"
+    from_port   = 5002
+    protocol    = "tcp"
+    to_port     = 5002
+  }
+
+  ingress {
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "open http web port for internet traffic"
+    from_port   = 80
+    protocol    = "tcp"
+    to_port     = 80
+  }
+
+  name   = "private-security-group"
+  vpc_id = aws_vpc.my_vpc_01.id
+}
+
+resource "aws_security_group" "public_sg" {
+  tags = {
+    Name = "Public Security Group"
+  }
+
+  tags_all = {
+    Name = "Public Security Group"
+  }
+
+  description = "Public Security Group"
+  egress {
+    cidr_blocks = ["0.0.0.0/0"]
+    from_port   = 0
+    protocol    = "-1"
+    to_port     = 0
+  }
+
+  ingress {
+    cidr_blocks = ["0.0.0.0/0"]
+    from_port   = 80
+    protocol    = "tcp"
+    to_port     = 80
+  }
+
+  ingress {
+    cidr_blocks = ["102.65.62.201/32"]
+    description = "SSH for admin desktop"
+    from_port   = 22
+    protocol    = "tcp"
+    to_port     = 22
+  }
+
+  ingress {
+    cidr_blocks = ["0.0.0.0/0"]
+    from_port   = 443
+    protocol    = "tcp"
+    to_port     = 443
+  }
+
+  ingress {
+    cidr_blocks = ["102.134.74.40/32"]
+    description = "For admin laptop"
+    from_port   = 22
+    protocol    = "tcp"
+    to_port     = 22
+  }
+
+  ingress {
+    cidr_blocks = ["0.0.0.0/0"]
+    from_port   = 8080
+    protocol    = "tcp"
+    to_port     = 8080
+  }
+
+  name   = "public_sg"
+  vpc_id = aws_vpc.my_vpc_01.id
+}
+
+# EC2 Instance
+resource "aws_instance" "node_api" {
+  instance_type               = "t2.micro"
+  ami                         = "ami-08c40ec9ead489470"
+  key_name                    = "week2-keypair"
+  vpc_security_group_ids      = [aws_security_group.private_sg.id]
+  subnet_id                   = aws_subnet.private_subnet.id
+  associate_public_ip_address = true
+  # Resize the default size of the drive on this instance
+  # AWS default is 8 but can get up 16 on free tier
+  root_block_device {
+    volume_size = 10
+  }
 
   tags = {
-    Name = "api-security-group"
-
+    Name = "node-api"
   }
+
 }
 
 
+/*resource "aws_instance" "i_0a10baf1fd7e5b14e" {
+  tags = {
+    Name = "1st-ApplicationInterface"
+  }
 
+  tags_all = {
+    Name = "1st-ApplicationInterface"
+  }
+
+  ami               = "ami-08c40ec9ead489470"
+  availability_zone = "us-east-1a"
+  capacity_reservation_specification {
+    capacity_reservation_preference = "open"
+  }
+
+  cpu_core_count       = 1
+  cpu_threads_per_core = 1
+  credit_specification {
+    cpu_credits = "standard"
+  }
+
+  instance_initiated_shutdown_behavior = "stop"
+  instance_type                        = "t2.micro"
+  key_name                             = aws_key_pair.week2_keypair.id
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_put_response_hop_limit = 1
+    http_tokens                 = "optional"
+    instance_metadata_tags      = "disabled"
+  }
+
+  private_ip = "172.31.83.78"
+  root_block_device {
+    delete_on_termination = true
+    iops                  = 100
+    volume_size           = 8
+    volume_type           = "gp2"
+  }
+
+  security_groups        = ["APISecurityGroup"]
+  source_dest_check      = true
+  subnet_id              = aws_subnet.subnet_0873c8968c11935e2.id
+  tenancy                = aws_vpc.vpc_0eed75d9570db478e.instance_tenancy
+  vpc_security_group_ids = [aws_security_group.api_security_group.id]
+}*/
 
 # security_groups        = ["APISecurityGroup"]
 #   source_dest_check      = true
 #   subnet_id              = aws_subnet..subnet_0873c8968c11935e2.id
 #   tenancy                = aws_vpc.vpc_0eed75d9570db478e.instance_tenancy
-#   vpc_security_group_ids = [aws_security_group.api_security_group.id]
+#   vpc_security_group_ids = [aws_security_group.private_sg.id]
 
 /*
 # RDS
