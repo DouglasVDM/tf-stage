@@ -243,6 +243,8 @@ resource "aws_instance" "node_api" {
   vpc_security_group_ids      = [aws_security_group.private_sg.id]
   subnet_id                   = aws_subnet.private_subnet.id
   associate_public_ip_address = true
+  user_data                   = file("userdata.tpl")
+
   # Resize the default size of the drive on this instance
   # AWS default is 8 but can get up 16 on free tier
   root_block_device {
@@ -255,113 +257,24 @@ resource "aws_instance" "node_api" {
 
 }
 
+terraform {
+  backend "s3" {
+    bucket = "stage-up-and-running-state"
+    key    = "terraform.tfstate"
+    region = "us-east-1"
 
-/*resource "aws_instance" "i_0a10baf1fd7e5b14e" {
-  tags = {
-    Name = "1st-ApplicationInterface"
+    dynamodb_table = "stage-up-and-running-locks"
+    encrypt        = true
   }
-
-  tags_all = {
-    Name = "1st-ApplicationInterface"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "3.26.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "3.0.1"
+    }
   }
-
-  ami               = "ami-08c40ec9ead489470"
-  availability_zone = "us-east-1a"
-  capacity_reservation_specification {
-    capacity_reservation_preference = "open"
-  }
-
-  cpu_core_count       = 1
-  cpu_threads_per_core = 1
-  credit_specification {
-    cpu_credits = "standard"
-  }
-
-  instance_initiated_shutdown_behavior = "stop"
-  instance_type                        = "t2.micro"
-  key_name                             = aws_key_pair.week2_keypair.id
-  metadata_options {
-    http_endpoint               = "enabled"
-    http_put_response_hop_limit = 1
-    http_tokens                 = "optional"
-    instance_metadata_tags      = "disabled"
-  }
-
-  private_ip = "172.31.83.78"
-  root_block_device {
-    delete_on_termination = true
-    iops                  = 100
-    volume_size           = 8
-    volume_type           = "gp2"
-  }
-
-  security_groups        = ["APISecurityGroup"]
-  source_dest_check      = true
-  subnet_id              = aws_subnet.subnet_0873c8968c11935e2.id
-  tenancy                = aws_vpc.vpc_0eed75d9570db478e.instance_tenancy
-  vpc_security_group_ids = [aws_security_group.api_security_group.id]
-}*/
-
-# security_groups        = ["APISecurityGroup"]
-#   source_dest_check      = true
-#   subnet_id              = aws_subnet..subnet_0873c8968c11935e2.id
-#   tenancy                = aws_vpc.vpc_0eed75d9570db478e.instance_tenancy
-#   vpc_security_group_ids = [aws_security_group.private_sg.id]
-
-/*
-# RDS
-resource "aws_db_instance" "stage" {
-  identifier_prefix    = "stage-up-and-running"
-  engine               = "mysql"
-  allocated_storage    = 10
-  instance_class       = "db.t2.micro"
-  skip_final_snapshot  = true
-  db_name              = "stage_database"
-  db_subnet_group_name = "default"
-  username             = var.db_username
-  password             = var.db_password
-
-  auto_minor_version_upgrade = true
-  backup_window              = "04:19-04:49"
-  ca_cert_identifier         = "rds-ca-2019"
-  copy_tags_to_snapshot      = true
+  required_version = ">= 1.1.0"
 }
-
-  db_subnet_group_name       = aws_db_subnet_group.rds_db_sbntg.id
-  delete_automated_backups   = true
-  engine                     = "mysql"
-  engine_version             = "8.0.31"
-  identifier                 = "test-db-1"
-  instance_class             = "db.t2.micro"
-  kms_key_id                 = "arn:aws:kms:us-east-1:391551845951:key/28442241-8bdd-40a4-9584-ca15139ed2c4"
-  license_model              = "general-public-license"
-  maintenance_window         = "tue:09:30-tue:10:00"
-  option_group_name          = "default:mysql-8-0"
-  parameter_group_name       = aws_db_parameter_group.default_mysql8_0.id
-  port                       = 3306
-  skip_final_snapshot        = true
-  storage_encrypted          = true
-  storage_type               = "gp2"
-  username                   = "admin"
-  vpc_security_group_ids     = [aws_security_group.rds_db_security_group.id]
-}
-
-resource "aws_db_parameter_group" "default_mysql8_0" {
-  description = "Default parameter group for mysql8.0"
-  family      = "mysql8.0"
-  name        = "default.mysql8.0"
-}
-
-resource "aws_db_subnet_group" "rds_db_sbntg" {
-  description = "for RDS database testing"
-  name        = "rds-db-sbntg"
-  subnet_ids  = [aws_subnet.private_subnet.id, aws_subnet.public_subnet.id]
-}
-
-# Route 53
-resource "aws_route53_resolver_rule_association" "rslvr_autodefined_assoc_vpc_00cbf222986291997_internet_resolver" {
-  name             = "System Rule Association"
-  resolver_rule_id = "rslvr-autodefined-rr-internet-resolver"
-  vpc_id           = aws_vpc.my_vpc_01.id
-}
-*/
