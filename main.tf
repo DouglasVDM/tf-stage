@@ -5,10 +5,6 @@ resource "aws_vpc" "my_vpc_01" {
     Name = "my-vpc-01"
   }
 
-  tags_all = {
-    Name = "my-vpc-01"
-  }
-
   cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
   enable_dns_support   = true
@@ -22,14 +18,9 @@ resource "aws_subnet" "private_subnet" {
     Name = "private-subnet"
   }
 
-  tags_all = {
-    Name = "private-subnet"
-  }
-
-  availability_zone_id                = "use1-az4"
-  cidr_block                          = "10.0.2.0/24"
-  private_dns_hostname_type_on_launch = "ip-name"
-  vpc_id                              = aws_vpc.my_vpc_01.id
+  availability_zone_id = "use1-az4"
+  cidr_block           = "10.0.2.0/24"
+  vpc_id               = aws_vpc.my_vpc_01.id
 }
 
 resource "aws_subnet" "public_subnet" {
@@ -37,23 +28,14 @@ resource "aws_subnet" "public_subnet" {
     Name = "public-subnet"
   }
 
-  tags_all = {
-    Name = "public-subnet"
-  }
-
-  availability_zone_id                = "use1-az2"
-  cidr_block                          = "10.0.1.0/24"
-  map_public_ip_on_launch             = true
-  private_dns_hostname_type_on_launch = "ip-name"
-  vpc_id                              = aws_vpc.my_vpc_01.id
+  availability_zone_id    = "use1-az2"
+  cidr_block              = "10.0.1.0/24"
+  map_public_ip_on_launch = true
+  vpc_id                  = aws_vpc.my_vpc_01.id
 }
 
 resource "aws_internet_gateway" "app_internet_gateway" {
   tags = {
-    Name = "app-internet-gateway"
-  }
-
-  tags_all = {
     Name = "app-internet-gateway"
   }
 
@@ -63,10 +45,6 @@ resource "aws_internet_gateway" "app_internet_gateway" {
 # Route Table
 resource "aws_route_table" "private_route_table" {
   tags = {
-    Name = "private-route-table"
-  }
-
-  tags_all = {
     Name = "private-route-table"
   }
 
@@ -80,10 +58,6 @@ resource "aws_route_table" "private_route_table" {
 
 resource "aws_route_table" "public_route_table" {
   tags = {
-    Name = "public-route-table"
-  }
-
-  tags_all = {
     Name = "public-route-table"
   }
 
@@ -111,10 +85,6 @@ resource "aws_route_table_association" "private_rt_association" {
 resource "aws_security_group" "private_sg" {
   tags = {
     Name = "Private Security Group"
-  }
-
-  tags_all = {
-    Name = "private_sg"
   }
 
   description = "Security Group for Node API and MySql db"
@@ -179,10 +149,6 @@ resource "aws_security_group" "private_sg" {
 
 resource "aws_security_group" "public_sg" {
   tags = {
-    Name = "Public Security Group"
-  }
-
-  tags_all = {
     Name = "Public Security Group"
   }
 
