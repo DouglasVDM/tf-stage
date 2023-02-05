@@ -1,0 +1,35 @@
+version: '3.4'
+
+services:
+  frontend:
+    image: douglasvdmerwe/react-app:1.0.0
+    ports:
+      - 3000:3000  
+
+  backend:
+    image: douglasvdmerwe/hradmin-api:1.0.3
+    ports:
+      - 5001:5001
+    # depends_on:
+      # - postgresdb
+    environment:
+      # DATABASE_URL: postgres://todoapp@postgres/testdb
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password 
+
+  database:
+    image: postgres:9.6.2-alpine
+    container_name: postgresdb
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+    
+    expose:
+      - 5432
+    volumes:
+      - departments:/var/lib/postgresql/data
+
+volumes:
+  departments:
