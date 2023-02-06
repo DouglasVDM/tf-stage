@@ -9,6 +9,8 @@ resource "aws_vpc" "my_vpc_01" {
   enable_dns_hostnames = true
   enable_dns_support   = true
   instance_tenancy     = "default"
+  # public_subnets       = ["10.0.4.0/24", "10.0.5.0/24", "10.0.6.0/24"]
+
 }
 
 
@@ -210,6 +212,7 @@ resource "aws_instance" "node_api" {
   subnet_id                   = aws_subnet.private_subnet.id
   associate_public_ip_address = true
   user_data                   = file("userdata.tpl")
+  iam_instance_profile        = aws_iam_instance_profile.ec2_profile_ecr_access.name
 
   # Resize the default size of the drive on this instance
   # AWS default is 8 but can get up 16 on free tier
@@ -222,6 +225,158 @@ resource "aws_instance" "node_api" {
   }
 
 }
+
+resource "aws_iam_role" "ec2_role_ecr_access" {
+  name = "ec2_role_ecr_access"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "ec2.amazonaws.com"
+      },
+      "Effect": "Allow"
+    }
+  ]
+}
+EOF
+
+  tags = {
+    project = "cloud-module"
+  }
+}
+
+resource "aws_iam_instance_profile" "ec2_profile_ecr_access" {
+  name = "ec2_profile_ecr_access"
+  role = aws_iam_role.ec2_role_ecr_access.name
+}
+
+resource "aws_iam_role_policy" "ec2_policy" {
+  name = "ec2_policy"
+  role = aws_iam_role.ec2_role_ecr_access.id
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "ecr:GetAuthorizationToken",
+        "ecr:BatchGetImage",
+        "ecr:GetDownloadUrlForLayer"
+      ],
+      "Effect": "Allow",
+      "Resource": "*"
+    }
+  ]
+}
+EOF
+}
+
+# resource "aws_db_subnet_group" "testdb" {
+#   name       = "testdb"
+#   subnet_ids = [aws_subnets.my_vpc_01.public_subnets]
+
+#   tags = {
+#     Name = "testdb"
+#   }
+# }
+
+
+# Parameter Group
+resource "aws_db_parameter_group" "testdb" {
+  name   = "testdb"
+  family = "postgres14"
+
+  parameter {
+    name  = "log_connections"
+    value = "1"
+  }
+}
+
+### DATABASE
+# resource "aws_db_instance" "testdb" {
+#   allocated_storage                     = 20
+#   auto_minor_version_upgrade            = true
+#   availability_zone                     = "us-east-1c"
+#   backup_window                         = "04:56-05:26"
+#   ca_cert_identifier                    = "rds-ca-2019"
+#   copy_tags_to_snapshot                 = true
+#   # db_name                               = "testdb"
+#   db_subnet_group_name                  = "default"
+#   delete_automated_backups              = true
+#   engine                                = "postgres"
+#   engine_version                        = "14.5"
+#   identifier                            = "testdb"
+#   instance_class                        = "db.t3.micro"
+#   kms_key_id                            = "arn:aws:kms:us-east-1:391551845951:key/28442241-8bdd-40a4-9584-ca15139ed2c4"
+#   license_model                         = "postgresql-license"
+#   maintenance_window                    = "thu:10:00-thu:10:30"
+#   monitoring_interval                   = 60
+#   monitoring_role_arn                   = "arn:aws:iam::391551845951:role/rds-monitoring-role"
+#   option_group_name                     = "default:postgres-14"
+#   parameter_group_name                  = "default.postgres14"
+#   performance_insights_enabled          = true
+#   performance_insights_kms_key_id       = "arn:aws:kms:us-east-1:391551845951:key/28442241-8bdd-40a4-9584-ca15139ed2c4"
+#   performance_insights_retention_period = 7
+#   port                                  = 5432
+#   publicly_accessible                   = true
+#   skip_final_snapshot                   = true
+#   storage_encrypted                     = true
+#   storage_type                          = "gp2"
+#   username                              = "dbuser"
+#   vpc_security_group_ids                = ["sg-010baad65060fe539"]
+# }
+
+# resource "aws_db_instance" "testdb" {
+#   identifier        = "testdb"
+#   instance_class    = "db.t2.micro"
+#   storage_type      = "gp2"
+#   allocated_storage = 5
+#   engine            = "postgres"
+#   engine_version    = "14.1"
+#   username          = "dbuser"
+#   password          = var.db_password
+#   # db_subnet_group_name       = aws_db_subnet_group.testdb.name
+#   # vpc
+#   _security_group_ids     = aws_security_group.private_sg.id
+#   parameter_group_name       = aws_db_parameter_group.testdb.name
+#   publicly_accessible        = true
+#   port                       = 5432
+#   backup_retention_period    = 1
+#   auto_minor_version_upgrade = true
+#   deletion_protection        = true
+#   skip_final_snapshot        = true
+# }
+
+# Input Variables
+variable "db_password" {
+  description = "RDS root user password"
+  type        = string
+  sensitive   = true
+}
+
+# Output Variables
+# output "rds_hostname" {
+#   description = "RDS instance hostname"
+#   value       = aws_db_instance.testdb.address
+#   sensitive   = true
+# }
+
+# output "rds_port" {
+#   description = "RDS instance port"
+#   value       = aws_db_instance.testdb.port
+#   sensitive   = true
+# }
+
+# output "rds_username" {
+#   description = "RDS instance root username"
+#   value       = aws_db_instance.testdb.username
+#   sensitive   = true
+# }
 
 terraform {
   backend "s3" {
