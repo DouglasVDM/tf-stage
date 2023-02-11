@@ -212,8 +212,8 @@ resource "aws_instance" "node_api" {
   vpc_security_group_ids      = [aws_security_group.private_sg.id]
   subnet_id                   = aws_subnet.private_subnet.id
   associate_public_ip_address = true
-  user_data = "${file(
-  "userdata.tpl")}"
+  user_data = (file(
+  "userdata.tpl"))
   iam_instance_profile = aws_iam_instance_profile.ec2_profile_ecr_access.name
 
   # Resize the default size of the drive on this instance
@@ -236,8 +236,8 @@ resource "aws_instance" "react-app" {
   vpc_security_group_ids      = [aws_security_group.public_sg.id]
   subnet_id                   = aws_subnet.public_subnet.id
   associate_public_ip_address = true
-  user_data = "${file(
-  "userdata-app.tpl")}"
+  user_data = (file(
+  "userdata-app.tpl"))
   iam_instance_profile = aws_iam_instance_profile.ec2_profile_ecr_access.name
 
   # Resize the default size of the drive on this instance
