@@ -10,6 +10,6 @@ sudo systemctl enable docker
 sudo groupadd docker
 sudo usermod -aG docker ubuntu
 docker info
-aws ecr get-login-password --region region | docker login --username AWS --password-stdin aws_account_id.dkr.ecr.region.amazonaws.com
-docker pull 391551845951.dkr.ecr.us-east-1.amazonaws.com/cloud-module:latest
-
+sudo apt  install awscli
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 391551845951.dkr.ecr.us-east-1.amazonaws.com
+docker pull 391551845951.dkr.ecr.us-east-1.amazonaws.com/cloud-module:hradmin-api
