@@ -203,7 +203,8 @@ resource "aws_security_group" "public_sg" {
   vpc_id = aws_vpc.my_vpc_01.id
 }
 
-# EC2 Instance
+# EC2 Instances
+# Node API
 resource "aws_instance" "node_api" {
   instance_type               = "t2.micro"
   ami                         = "ami-08c40ec9ead489470"
@@ -211,8 +212,9 @@ resource "aws_instance" "node_api" {
   vpc_security_group_ids      = [aws_security_group.private_sg.id]
   subnet_id                   = aws_subnet.private_subnet.id
   associate_public_ip_address = true
-  user_data                   = file("userdata.tpl")
-  iam_instance_profile        = aws_iam_instance_profile.ec2_profile_ecr_access.name
+  user_data = "${file(
+  "userdata.tpl")}"
+  iam_instance_profile = aws_iam_instance_profile.ec2_profile_ecr_access.name
 
   # Resize the default size of the drive on this instance
   # AWS default is 8 but can get up 16 on free tier
@@ -226,6 +228,29 @@ resource "aws_instance" "node_api" {
 
 }
 
+# React App
+resource "aws_instance" "react-app" {
+  instance_type               = "t2.micro"
+  ami                         = "ami-08c40ec9ead489470"
+  key_name                    = "week2-keypair"
+  vpc_security_group_ids      = [aws_security_group.public_sg.id]
+  subnet_id                   = aws_subnet.public_subnet.id
+  associate_public_ip_address = true
+  user_data = "${file(
+  "userdata-app.tpl")}"
+  iam_instance_profile = aws_iam_instance_profile.ec2_profile_ecr_access.name
+
+  # Resize the default size of the drive on this instance
+  # AWS default is 8 but can get up 16 on free tier
+  root_block_device {
+    volume_size = 10
+  }
+
+  tags = {
+    Name = "react-app"
+  }
+
+}
 resource "aws_iam_role" "ec2_role_ecr_access" {
   name = "ec2_role_ecr_access"
 
